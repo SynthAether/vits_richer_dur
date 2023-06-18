@@ -4,8 +4,6 @@ My implementation of VITS([paper](https://arxiv.org/abs/2106.06103)) for JSUT([l
 
 Difference between originals and this implementation is 
 - not using MonotonicAlignmentSearch because I use GT durations.
-- add NeuralSourceFilter-like SignalGenerator for enhancing HiFi-GAN training.
-- add Frame-level PriorEncoder like VISinger([paper](https://arxiv.org/abs/2110.08813))
 
 # Usage
 Running run.sh will automatically download the data and begin training.
