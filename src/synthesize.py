@@ -15,11 +15,11 @@ def main(args):
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    seed_everything(cfg.train.seed)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     module = VITSModule.load_from_checkpoint(args.ckpt_path, params=cfg).to(device)
 
-    seed_everything(cfg.train.seed)
     with open(args.label_file, mode='r') as f:
         lines = f.readlines()
         lines = [l.strip() for l in lines]
