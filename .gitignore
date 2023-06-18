@@ -1,0 +1,5 @@
+data/
+downloads/
+out/
+/*.ipynb
+__pycache__
