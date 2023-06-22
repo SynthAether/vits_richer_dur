@@ -22,7 +22,7 @@ cd scripts
 
 # Requirements
 ```sh
-pip install torch torchaudio lightning soundfile tqdm pyworld
+pip install torch torchaudio lightning soundfile tqdm pyworld pandas
 ```
 
 # Result
