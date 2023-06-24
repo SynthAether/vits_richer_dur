@@ -31,11 +31,11 @@ def generator_loss(disc_outputs):
 
 # if you suspect this implementation, please browse this page 
 # "https://github.com/jaywalnut310/vits/issues/6"
-def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):
+def kl_loss(z_p, logs_q, m_p, logs_p, mask):
     kl = logs_p - logs_q - 0.5
     kl += 0.5 * ((z_p - m_p) ** 2) * torch.exp(-2. * logs_p)
-    kl = torch.sum(kl * z_mask)
-    loss = kl / torch.sum(z_mask)
+    kl = torch.sum(kl * mask)
+    loss = kl / mask.sum()
     return loss
 
 

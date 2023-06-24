@@ -6,7 +6,8 @@ download_dir=../downloads
 out_dir=../out
 mkdir -p $out_dir
 
-cd ../src/monotonic_align
+cd ../src/model/modules/monotonic_align
+mkdir -p monotonic_align
 python setup.py build_ext --inplace
 cd -
 

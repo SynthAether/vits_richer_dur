@@ -16,7 +16,7 @@ train = DotDict(
 
 loss_coef = DotDict(
     mel=45,
-    feature_matching=2
+    fm=2
 )
 
 mel_dim = 80

@@ -5,7 +5,7 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from monotonic_align import maximum_path
+from .monotonic_align import maximum_path
 from .prior_encoder import PhonemeEncoder
 from .posterior_encoder import PosteriorEncoder
 from .predictors import DurationPredictor
@@ -49,7 +49,6 @@ class VITS(nn.Module):
         (
             _,
             x,
-            duration,
             x_lengths,
             _,
             _,

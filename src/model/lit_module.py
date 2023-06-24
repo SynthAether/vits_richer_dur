@@ -71,7 +71,7 @@ class VITSModule(LightningModule):
         loss_dur = masked_mse_loss(o.duration_pred, to_log_scale(o.duration), mask=o.x_mask)
         loss_mel = self.loss_coef.mel * F.l1_loss(y_hat_mel, y_mel)
         loss_kl  = kl_loss(o.z_p, o.logs_q, o.m_p, o.logs_p, o.frame_mask)
-        loss_fm  = self.loss_coef.feature_matching * feature_loss(fmap_real, fmap_fake)
+        loss_fm  = self.loss_coef.fm * feature_loss(fmap_real, fmap_fake)
         loss_g = (
             loss_gen +
             loss_dur +
