@@ -7,3 +7,4 @@ src/test.py
 src/test.ipynb
 *.c
 build
+*.so
