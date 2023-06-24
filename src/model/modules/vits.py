@@ -1,9 +1,11 @@
+import math
 from dataclasses import dataclass
 from typing import List
 
 import torch
 import torch.nn as nn
 
+from monotonic_align import maximum_path
 from .prior_encoder import PhonemeEncoder
 from .posterior_encoder import PosteriorEncoder
 from .predictors import DurationPredictor
@@ -18,6 +20,7 @@ from ..utils import sequence_mask, generate_path, rand_slice_segments
 class VITSOutput:
     wav: torch.Tensor
     duration: torch.Tensor
+    duration_pred: torch.Tensor
     m_p: torch.Tensor
     logs_p: torch.Tensor
     z: torch.Tensor
@@ -56,23 +59,34 @@ class VITS(nn.Module):
 
         x_mask = sequence_mask(x_lengths, x.shape[-1]).unsqueeze(1).to(x.dtype)
         x, m_p, logs_p = self.phoneme_encoder(x, x_mask)
-        duratino_pred = self.duration_predictor(x, x_mask)
+        duration_pred = self.duration_predictor(x, x_mask)
 
         frame_mask = sequence_mask(frame_lengths, spec.shape[-1]).unsqueeze(1).to(spec.dtype)
         path_mask = x_mask.unsqueeze(-1) * frame_mask.unsqueeze(2)
-        attn_path = generate_path(duration.squeeze(1), path_mask.squeeze(1))
-        m_p = m_p @ attn_path
-        logs_p = logs_p @ attn_path
 
         z, m_q, logs_q = self.posterior_encoder(spec, frame_mask)
         z_p = self.flow(z, frame_mask)
+        
+        with torch.no_grad():
+            s_p_inv_sqrt = torch.exp(-2 * logs_p)
+            neg_cent1 = torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, dim=1, keepdim=True)
+            neg_cent2 = -0.5 * (z_p ** 2).transpose(2, 1) @ s_p_inv_sqrt
+            neg_cent3 = z_p.transpose(2, 1) @ m_p
+            neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_inv_sqrt, dim=1, keepdim=True)
+            neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
+
+            attn_path = maximum_path(neg_cent, path_mask.squeeze(1)).transpose(2, 1)  # [B, T_s, T_t]
+            duration = attn_path.sum(dim=-1).unsqueeze(1)
+        m_p = m_p @ attn_path
+        logs_p = logs_p @ attn_path
 
         z_slice, idx_slice = rand_slice_segments(z, z.shape[-1], segment_size=self.segment_size)
         o = self.vocoder(z_slice)
 
         return VITSOutput(
             wav=o,
-            duration=duratino_pred,
+            duration=duration,
+            duration_pred=duration_pred,
             m_p=m_p,
             logs_p=logs_p,
             z=z,
