@@ -67,7 +67,7 @@ class VITS(nn.Module):
         z, m_q, logs_q = self.posterior_encoder(spec, frame_mask)
         z_p = self.flow(z, frame_mask)
 
-        z_slice, idx_slice = rand_slice_segments(z, z.shape[-1], segment_size=self.segment_size)
+        z_slice, idx_slice = rand_slice_segments(z, frame_lengths, segment_size=self.segment_size)
         o = self.vocoder(z_slice)
 
         return VITSOutput(

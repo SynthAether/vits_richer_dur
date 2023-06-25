@@ -10,16 +10,16 @@ class PosteriorEncoder(nn.Module):
         self.out_channels = out_channels
 
         self.in_conv = nn.Conv1d(in_channels, hidden_channels, 1)
-        self.wn = WaveNetLayer(hidden_channels, kernel_size, dilation_rate, num_layers)
+        self.enc = WaveNetLayer(hidden_channels, kernel_size, dilation_rate, num_layers)
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
         
     def forward(self, x, mask):
         x = self.in_conv(x) * mask
-        x = self.wn(x, mask)
+        x = self.enc(x, mask)
         x = self.proj(x) * mask
         m, logs = x.split([self.out_channels]*2, dim=1)
         z = (m + torch.exp(logs) * torch.randn_like(logs)) * mask
         return z, m, logs
     
     def remove_weight_norm(self):
-        self.wn.remove_weight_norm()
+        self.enc.remove_weight_norm()
