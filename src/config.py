@@ -9,7 +9,7 @@ class DotDict(dict):
 
 train = DotDict(
     seed=42,
-    num_epoch=10000,
+    num_epoch=1000,
     batch_size=16,
     save_ckpt_interval=500,
 )
