@@ -58,7 +58,7 @@ class WaveNetLayer(nn.Module):
     def forward(self, x, mask):
         o = 0
         for i, (in_layer, skip_layer) in enumerate(zip(self.in_layers, self.res_skip_layers)):
-            y = in_layer(y)
+            y = in_layer(x)
             y1, y2 = y.split([self.channels]*2, dim=1)
             y = y1.tanh() * y2.sigmoid()
             y = self.dropout(y)
