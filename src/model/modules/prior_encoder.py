@@ -160,7 +160,7 @@ class PhonemeEncoder(nn.Module):
                 window_size
             ) for _ in range(num_layers)
         ])
-        self.postnet = nn.Conv1d(channels, channels * 2, 1)
+        self.proj = nn.Conv1d(channels, channels * 2, 1)
 
     def forward(self, x, mask):
         x = self.emb(x) * self.scale
@@ -168,6 +168,6 @@ class PhonemeEncoder(nn.Module):
         attn_mask = mask.unsqueeze(2) * mask.unsqueeze(-1)
         for layer in self.layers:
             x = layer(x, mask, attn_mask)
-        o = self.postnet(x) * mask
+        o = self.proj(x) * mask
         m, logs = o.split([self.channels]*2, dim=1)
         return x, m, logs

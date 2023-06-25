@@ -67,19 +67,19 @@ class VITS(nn.Module):
         z_p = self.flow(z, frame_mask)
         
         with torch.no_grad():
-            s_p_inv_sqrt = torch.exp(-2 * logs_p)
+            s_p_inv_sq = torch.exp(-2 * logs_p)
             neg_cent1 = torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, dim=1, keepdim=True)
-            neg_cent2 = -0.5 * (z_p ** 2).transpose(2, 1) @ s_p_inv_sqrt
-            neg_cent3 = z_p.transpose(2, 1) @ m_p
-            neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_inv_sqrt, dim=1, keepdim=True)
+            neg_cent2 = (-0.5 * (z_p ** 2).transpose(1, 2)) @ s_p_inv_sq
+            neg_cent3 = z_p.transpose(1, 2) @ (m_p * s_p_inv_sq)
+            neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_inv_sq, dim=1, keepdim=True)
             neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
 
-            attn_path = maximum_path(neg_cent, path_mask.squeeze(1)).transpose(2, 1)  # [B, T_s, T_t]
+            attn_path = maximum_path(neg_cent, path_mask.squeeze(1)).detach().transpose(1, 2)  # [B, T_s, T_t]
             duration = attn_path.sum(dim=-1).unsqueeze(1)
         m_p = m_p @ attn_path
         logs_p = logs_p @ attn_path
 
-        z_slice, idx_slice = rand_slice_segments(z, z.shape[-1], segment_size=self.segment_size)
+        z_slice, idx_slice = rand_slice_segments(z, frame_lengths, segment_size=self.segment_size)
         o = self.vocoder(z_slice)
 
         return VITSOutput(

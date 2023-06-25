@@ -56,21 +56,21 @@ class WaveNetLayer(nn.Module):
             )
 
     def forward(self, x, mask):
-        y = 0
+        o = 0
         for i, (in_layer, skip_layer) in enumerate(zip(self.in_layers, self.res_skip_layers)):
-            z = in_layer(x)
-            z1, z2 = z.split([self.channels]*2, dim=1)
-            z = z1.sigmoid() * z2.tanh()
-            z = self.dropout(z)
+            y = in_layer(x)
+            y1, y2 = y.split([self.channels]*2, dim=1)
+            y = y1.tanh() * y2.sigmoid()
+            y = self.dropout(y)
 
-            z = skip_layer(z)
+            y = skip_layer(y)
             if i == self.num_layers - 1:
-                y = y + z
+                o = o + y
             else:
-                z1, z2 = z.split([self.channels]*2, dim=1)
-                x = (x + z1) * mask
-                y = y + z2
-        return y * mask
+                y1, y2 = y.split([self.channels]*2, dim=1)
+                x = (x + y1) * mask
+                o = o + y2
+        return o * mask
 
     def remove_weight_norm(self):
         for layer in self.in_layers:

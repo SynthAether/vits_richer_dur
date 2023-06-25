@@ -25,7 +25,7 @@ class ResidualCouplingLayer(nn.Module):
         super().__init__()
         self.half_channels = channels // 2
 
-        self.pre = nn.Conv1d(channels // 2, channels, 1)
+        self.pre = nn.Conv1d(self.half_channels, channels, 1)
         self.wn = WaveNetLayer(channels, kernel_size, dilation_rate, n_layers, dropout=dropout)
         self.post = nn.Conv1d(channels, channels // 2, 1)
         self.post.weight.data.zero_()

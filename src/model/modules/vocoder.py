@@ -63,7 +63,7 @@ class Vocoder(nn.Module):
         self.upsample_rates = upsample_rates
         self.num_upsamples = len(upsample_rates)
 
-        self.conv_pre = weight_norm(nn.Conv1d(in_channel, upsample_initial_channel, kernel_size=7, stride=1, padding=3))
+        self.conv_pre = nn.Conv1d(in_channel, upsample_initial_channel, kernel_size=7, stride=1, padding=3)
         self.upsamples = nn.ModuleList()
         for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
             self.upsamples.append(
@@ -88,14 +88,12 @@ class Vocoder(nn.Module):
                 ])
             )
 
-        self.conv_post = weight_norm(
-            nn.Conv1d(
-                upsample_initial_channel//(2 ** len(upsample_rates)), 
-                1,
-                kernel_size=7, 
-                stride=1, 
-                padding=3
-            )
+        self.conv_post = nn.Conv1d(
+            upsample_initial_channel//(2 ** len(upsample_rates)), 
+            1,
+            kernel_size=7, 
+            stride=1, 
+            padding=3
         )
 
         self.upsamples.apply(init_weights)
