@@ -96,7 +96,7 @@ class VITS(nn.Module):
             frame_mask=frame_mask,
             idx_slice=idx_slice
         )
-    
+
     def infer(self, x: torch.Tensor, noise_scale: float = 0.667) -> torch.Tensor:
         # x : [1, P]
         # P: Phoneme level length
