@@ -101,15 +101,13 @@ class VITS(nn.Module):
         # x : [1, P]
         # P: Phoneme level length
 
-        x_lengths = torch.tensor([x.shape[-1]], dtype=torch.long, device=x.device)
-        x_mask = sequence_mask(x_lengths).unsqueeze(1).to(x.dtype)
+        x_mask = torch.ones_like(x).unsqueeze(1)
 
         x, m_p, logs_p = self.phoneme_encoder(x, x_mask)
         log_duration = self.duration_predictor(x, x_mask)
         duration = torch.ceil(torch.exp(log_duration)).long()
 
-        frame_lengths = torch.tensor([duration.sum()], dtype=torch.long, device=x.device)
-        frame_mask = sequence_mask(frame_lengths).unsqueeze(1).to(x.dtype)
+        frame_mask = torch.ones([1, 1, duration.sum()], dtype=torch.float, device=x.device)
         path_mask = x_mask.unsqueeze(-1) * frame_mask.unsqueeze(2)
         attn_path = generate_path(duration.squeeze(1), path_mask.squeeze(1))
         m_p = m_p @ attn_path
