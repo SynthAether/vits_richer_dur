@@ -25,14 +25,27 @@ class TextAudioDataset(torch.utils.data.Dataset):
 
         self.spec_tfm = SpectrogramTransform(**audio_config)
 
+    def preprocess(self, bname):
+        with open(self.lab_dir / f'{bname}.lab', 'r') as f:
+            fullcontext = f.readlines()
+        s, e, _ = fullcontext[0].split()
+        s, e = int(s), int(e)
+        wav_s = int(e * 1e-7 * self.sample_rate)
+        s, e, _ = fullcontext[-1].split()
+        s, e = int(s), int(e)
+        wav_e = int(s * 1e-7 * self.sample_rate)
+        wav, _ = torchaudio.load(self.wav_dir / f'{bname}.wav')
+        wav = wav[:, wav_s:wav_e]
+        spec = self.spec_tfm.to_spec(wav).squeeze(0)
+        return wav, spec
 
     def __getitem__(self, idx):
         bname, label = self.data[idx]
 
         phonemes = torch.LongTensor(text_to_sequence(label.split()))
+        phonemes = phonemes[1:-1]
 
-        wav, _ = torchaudio.load(self.wav_dir / f'{bname}.wav')
-        spec = self.spec_tfm.to_spec(wav).squeeze()
+        wav, spec = self.preprocess(bname)
 
         return (
             bname,
