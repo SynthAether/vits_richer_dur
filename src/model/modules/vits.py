@@ -65,7 +65,7 @@ class VITS(nn.Module):
 
         z, m_q, logs_q = self.posterior_encoder(spec, frame_mask)
         z_p = self.flow(z, frame_mask)
-        
+    
         with torch.no_grad():
             s_p_inv_sq = torch.exp(-2 * logs_p)
             neg_cent1 = torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, dim=1, keepdim=True)
@@ -113,7 +113,7 @@ class VITS(nn.Module):
         m_p = m_p @ attn_path
         logs_p = logs_p @ attn_path
 
-        z_p = m_p + torch.exp(logs_p) * torch.randn_like(logs_p) * noise_scale
+        z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
         z = self.flow.reverse(z_p, frame_mask)
         
         o = self.vocoder(z)

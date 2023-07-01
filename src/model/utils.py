@@ -53,5 +53,5 @@ def rand_slice_segments(x, x_lengths=None, segment_size=4):
 
 
 def to_log_scale(x: torch.Tensor):
-    x[x != 0] = torch.log(x[x != 0])
+    x = torch.where(x != 0, torch.log(x), 0)
     return x

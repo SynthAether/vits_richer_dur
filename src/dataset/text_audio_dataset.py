@@ -1,11 +1,10 @@
-import numpy as np
 import torch
 import torchaudio
 
 from pathlib import Path
 
 from audio import SpectrogramTransform
-from text import text_to_sequence, phonemes
+from text import text_to_sequence
 
 
 class TextAudioDataset(torch.utils.data.Dataset):

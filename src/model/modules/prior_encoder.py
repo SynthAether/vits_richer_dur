@@ -7,7 +7,6 @@ import torch.nn.functional as F
 from .layers import LayerNorm
 
 
-
 # Windowed Relative Positional Encoding is applied
 class MultiHeadAttention(nn.Module):
     def __init__(self, channels, n_heads, dropout, window_size=4):
@@ -28,6 +27,10 @@ class MultiHeadAttention(nn.Module):
         rel_stddev = self.inter_channels ** -0.5
         self.emb_rel_k = nn.Parameter(torch.randn(1, window_size * 2 + 1, self.inter_channels) * rel_stddev)
         self.emb_rel_v = nn.Parameter(torch.randn(1, window_size * 2 + 1, self.inter_channels) * rel_stddev)
+
+        nn.init.xavier_uniform_(self.conv_q.weight)
+        nn.init.xavier_uniform_(self.conv_k.weight)
+        nn.init.xavier_uniform_(self.conv_v.weight)
 
     def forward(self, x, mask):
         q = self.conv_q(x)
@@ -77,7 +80,6 @@ class MultiHeadAttention(nn.Module):
         return x
 
 
-
 class FFN(nn.Module):
     def __init__(self, channels, kernel_size, dropout, scale=4):
         super(FFN, self).__init__()
@@ -93,7 +95,6 @@ class FFN(nn.Module):
         x = self.conv_2(x * x_mask)
         return x * x_mask
     
-
 
 class AttentionLayer(nn.Module):
     def __init__(self, channels, num_head, dropout, window_size):
@@ -120,7 +121,7 @@ class FFNLayer(nn.Module):
         y = self.ffn(x, mask)
         y = self.dropout(y)
         x = self.norm(x + y)
-        return x
+        return x * mask
 
 
 class EncoderLayer(nn.Module):
@@ -137,6 +138,7 @@ class EncoderLayer(nn.Module):
             kernel_size=kernel_size,
             dropout=dropout
         )
+
     def forward(self, x, mask, attn_mask):
         x = self.attention(x, attn_mask)
         x = self.ffn(x, mask)
@@ -160,14 +162,15 @@ class PhonemeEncoder(nn.Module):
                 window_size
             ) for _ in range(num_layers)
         ])
-        self.proj = nn.Conv1d(channels, channels * 2, 1)
+        self.postnet = nn.Conv1d(channels, channels * 2, 1)
 
     def forward(self, x, mask):
         x = self.emb(x) * self.scale
-        x = torch.transpose(x, 1, -1)
+        x = x.transpose(-1, -2)
         attn_mask = mask.unsqueeze(2) * mask.unsqueeze(-1)
+        x = x * mask
         for layer in self.layers:
             x = layer(x, mask, attn_mask)
-        o = self.proj(x) * mask
-        m, logs = o.split([self.channels]*2, dim=1)
+        o = self.postnet(x) * mask
+        m, logs = o.split([self.channels] * 2, dim=1)
         return x, m, logs
