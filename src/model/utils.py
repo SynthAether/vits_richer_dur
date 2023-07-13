@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 
 def init_weights(m, mean=0.0, std=0.01):
@@ -15,8 +16,8 @@ def sequence_mask(length, max_length=None):
 
 
 def convert_pad_shape(pad_shape):
-    l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
+    reverse_pad = pad_shape[::-1]
+    pad_shape = [item for sublist in reverse_pad for item in sublist]
     return pad_shape
 
 
@@ -28,7 +29,7 @@ def generate_path(duration, mask):
     cum_duration_flat = cum_duration.view(b * t_x)
     path = sequence_mask(cum_duration_flat, t_y).to(mask.dtype)
     path = path.view(b, t_x, t_y)
-    path = path - torch.nn.functional.pad(path, convert_pad_shape([[0, 0], [1, 0], [0, 0]]))[:, :-1]
+    path = path - F.pad(path, convert_pad_shape([[0, 0], [1, 0], [0, 0]]))[:, :-1]
     path = path * mask
     return path
 

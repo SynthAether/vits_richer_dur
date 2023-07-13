@@ -12,27 +12,67 @@ class DiscriminatorP(nn.Module):
         super(DiscriminatorP, self).__init__()
         self.period = period
         self.use_spectral_norm = use_spectral_norm
-        self.convs = nn.ModuleList([
-            weight_norm(nn.Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(kernel_size//2, 0))),
-            weight_norm(nn.Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(kernel_size//2, 0))),
-            weight_norm(nn.Conv2d(128, 512, (kernel_size, 1), (stride, 1), padding=(kernel_size//2, 0))),
-            weight_norm(nn.Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(kernel_size//2, 0))),
-            weight_norm(nn.Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(kernel_size//2, 0))),
-        ])
-        self.conv_post = weight_norm(nn.Conv2d(1024, 1, kernel_size=(3, 1), stride=1, padding=(1, 0)))
+        self.convs = nn.ModuleList(
+            [
+                weight_norm(
+                    nn.Conv2d(
+                        1,
+                        32,
+                        (kernel_size, 1),
+                        (stride, 1),
+                        padding=(kernel_size // 2, 0),
+                    )
+                ),
+                weight_norm(
+                    nn.Conv2d(
+                        32,
+                        128,
+                        (kernel_size, 1),
+                        (stride, 1),
+                        padding=(kernel_size // 2, 0),
+                    )
+                ),
+                weight_norm(
+                    nn.Conv2d(
+                        128,
+                        512,
+                        (kernel_size, 1),
+                        (stride, 1),
+                        padding=(kernel_size // 2, 0),
+                    )
+                ),
+                weight_norm(
+                    nn.Conv2d(
+                        512,
+                        1024,
+                        (kernel_size, 1),
+                        (stride, 1),
+                        padding=(kernel_size // 2, 0),
+                    )
+                ),
+                weight_norm(
+                    nn.Conv2d(
+                        1024, 1024, (kernel_size, 1), 1, padding=(kernel_size // 2, 0)
+                    )
+                ),
+            ]
+        )
+        self.conv_post = weight_norm(
+            nn.Conv2d(1024, 1, kernel_size=(3, 1), stride=1, padding=(1, 0))
+        )
 
     def forward(self, x):
         fmap = []
         # 1d to 2d
         b, c, t = x.shape
-        if t % self.period != 0: # pad first
+        if t % self.period != 0:  # pad first
             n_pad = self.period - (t % self.period)
             x = F.pad(x, (0, n_pad), "reflect")
             t = t + n_pad
         x = x.view(b, c, t // self.period, self.period)
 
-        for l in self.convs:
-            x = l(x)
+        for layer in self.convs:
+            x = layer(x)
             x = F.leaky_relu(x, LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
@@ -46,21 +86,23 @@ class DiscriminatorS(torch.nn.Module):
     def __init__(self, use_spectral_norm=False):
         super(DiscriminatorS, self).__init__()
         norm_f = weight_norm if use_spectral_norm == False else spectral_norm
-        self.convs = nn.ModuleList([
-            norm_f(nn.Conv1d(1, 128, 15, 1, padding=7)),
-            norm_f(nn.Conv1d(128, 128, 41, 2, groups=4, padding=20)),
-            norm_f(nn.Conv1d(128, 256, 41, 2, groups=16, padding=20)),
-            norm_f(nn.Conv1d(256, 512, 41, 4, groups=16, padding=20)),
-            norm_f(nn.Conv1d(512, 1024, 41, 4, groups=16, padding=20)),
-            norm_f(nn.Conv1d(1024, 1024, 41, 1, groups=16, padding=20)),
-            norm_f(nn.Conv1d(1024, 1024, 5, 1, padding=2)),
-        ])
+        self.convs = nn.ModuleList(
+            [
+                norm_f(nn.Conv1d(1, 128, 15, 1, padding=7)),
+                norm_f(nn.Conv1d(128, 128, 41, 2, groups=4, padding=20)),
+                norm_f(nn.Conv1d(128, 256, 41, 2, groups=16, padding=20)),
+                norm_f(nn.Conv1d(256, 512, 41, 4, groups=16, padding=20)),
+                norm_f(nn.Conv1d(512, 1024, 41, 4, groups=16, padding=20)),
+                norm_f(nn.Conv1d(1024, 1024, 41, 1, groups=16, padding=20)),
+                norm_f(nn.Conv1d(1024, 1024, 5, 1, padding=2)),
+            ]
+        )
         self.conv_post = weight_norm(nn.Conv1d(1024, 1, 3, 1, padding=1))
 
     def forward(self, x):
         fmap = []
-        for l in self.convs:
-            x = l(x)
+        for layer in self.convs:
+            x = layer(x)
             x = F.leaky_relu(x, LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
@@ -74,8 +116,7 @@ class Discriminator(torch.nn.Module):
         super().__init__()
         periods = [2, 3, 5, 7, 11]
         self.discriminators = nn.ModuleList(
-            [DiscriminatorP(i) for i in periods] +
-            [DiscriminatorS()]
+            [DiscriminatorP(i) for i in periods] + [DiscriminatorS()]
         )
 
     def forward(self, y, y_hat):
