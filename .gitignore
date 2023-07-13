@@ -8,3 +8,4 @@ src/test.ipynb
 *.c
 build
 *.so
+out*
