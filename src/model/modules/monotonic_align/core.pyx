@@ -9,9 +9,8 @@ cdef void maximum_path_each(int[:,::1] path, float[:,::1] value, int t_y, int t_
     cdef int y
     cdef float v_prev
     cdef float v_cur
-    cdef float tmp
     cdef int index = t_x - 1
-  
+
     for y in range(t_y):
         for x in range(max(0, t_x + y - t_y), min(t_x, y + 1)):
             if x == y:

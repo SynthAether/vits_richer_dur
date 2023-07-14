@@ -6,6 +6,7 @@ __pycache__
 src/test.py
 src/test.ipynb
 *.c
+.vscode
 build
 *.so
 out*

@@ -55,7 +55,7 @@ class VITS(nn.Module):
         frame_mask = (
             sequence_mask(frame_lengths, spec.shape[-1]).unsqueeze(1).to(spec.dtype)
         )
-        path_mask = x_mask.unsqueeze(-1) * frame_mask.unsqueeze(2)
+        path_mask = (x_mask.unsqueeze(2) * frame_mask.unsqueeze(-1)).squeeze(1)
 
         z, m_q, logs_q = self.posterior_encoder(spec, frame_mask)
         z_p = self.flow(z, frame_mask)
@@ -70,8 +70,9 @@ class VITS(nn.Module):
             neg_cent4 = torch.sum(-0.5 * (m_p**2) * s_p_inv_sq, dim=1, keepdim=True)
             neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
 
+            assert neg_cent.shape == path_mask.shape
             attn_path = (
-                maximum_path(neg_cent, path_mask.squeeze(1)).detach().transpose(1, 2)
+                maximum_path(neg_cent, path_mask).detach().transpose(1, 2)
             )  # [B, T_s, T_t]
             duration = attn_path.sum(dim=-1).unsqueeze(1)
         m_p = m_p @ attn_path
