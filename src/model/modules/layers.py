@@ -13,7 +13,7 @@ class LayerNorm(nn.Module):
 
     def forward(self, x: torch.Tensor):
         mean = torch.mean(x, dim=1, keepdim=True)
-        variance = torch.mean((x - mean)**2, dim=1, keepdim=True)
+        variance = torch.mean((x - mean) ** 2, dim=1, keepdim=True)
 
         x = (x - mean) * torch.rsqrt(variance + self.eps)
         x = x * self.gamma + self.beta
@@ -31,15 +31,15 @@ class WaveNetLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         for i in range(num_layers):
-            dilation = dilation_rate ** i
+            dilation = dilation_rate**i
             self.in_layers.append(
                 weight_norm(
                     nn.Conv1d(
-                        channels, 
+                        channels,
                         2 * channels,
                         kernel_size,
-                        padding=kernel_size//2,
-                        dilation=dilation
+                        padding=kernel_size // 2,
+                        dilation=dilation,
                     )
                 )
             )
@@ -48,28 +48,28 @@ class WaveNetLayer(nn.Module):
                 res_skip_channels = channels
             else:
                 res_skip_channels = channels * 2
-            
+
             self.res_skip_layers.append(
-                weight_norm(
-                    nn.Conv1d(channels, res_skip_channels, kernel_size=1)
-                )
+                weight_norm(nn.Conv1d(channels, res_skip_channels, kernel_size=1))
             )
 
     def forward(self, x, mask):
-        o = 0
-        for i, (in_layer, skip_layer) in enumerate(zip(self.in_layers, self.res_skip_layers)):
-            y = in_layer(x)
-            y1, y2 = y.split([self.channels]*2, dim=1)
-            y = y1.tanh() * y2.sigmoid()
-            y = self.dropout(y)
+        o = torch.zeros_like(x)
+        for i, (in_layer, skip_layer) in enumerate(
+            zip(self.in_layers, self.res_skip_layers)
+        ):
+            x_in = in_layer(x)
+            x1, x2 = x_in.split([self.channels] * 2, dim=1)
+            acts = x1.tanh() * x2.sigmoid()
+            acts = self.dropout(acts)
 
-            y = skip_layer(y)
+            x_acts = skip_layer(acts)
             if i == self.num_layers - 1:
-                o = o + y
+                o = o + x_acts
             else:
-                y1, y2 = y.split([self.channels]*2, dim=1)
-                x = (x + y1) * mask
-                o = o + y2
+                x1, x2 = x_acts.split([self.channels] * 2, dim=1)
+                x = (x + x1) * mask
+                o = o + x2
         return o * mask
 
     def remove_weight_norm(self):

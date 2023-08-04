@@ -6,6 +6,11 @@ download_dir=../downloads
 out_dir=../out
 mkdir -p $out_dir
 
+cd ../src/model/modules/monotonic_align
+mkdir -p monotonic_align
+python setup.py build_ext --inplace
+cd -
+
 python ../src/train.py \
     --train_file $data_dir/label/train.txt \
     --valid_file $data_dir/label/valid.txt \

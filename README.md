@@ -3,7 +3,8 @@
 My implementation of VITS([paper](https://arxiv.org/abs/2106.06103)) for JSUT([link](https://sites.google.com/site/shinnosuketakamichi/publication/jsut)).
 
 Difference between originals and this implementation is 
-- not using MonotonicAlignmentSearch because I use GT durations.
+- Duration Predictor architecure
+It is slight richer than originals.
 
 # Usage
 Running run.sh will automatically download the data and begin training.
