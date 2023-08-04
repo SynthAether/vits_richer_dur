@@ -8,7 +8,7 @@ from text import text_to_sequence
 
 
 class TextAudioDataset(torch.utils.data.Dataset):
-    def __init__(self, file_path, wav_dir, lab_dir, audio_config, split='|'):
+    def __init__(self, file_path, wav_dir, lab_dir, audio_config, split="|"):
         with open(file_path) as f:
             lines = f.readlines()
             data = list()
@@ -18,7 +18,7 @@ class TextAudioDataset(torch.utils.data.Dataset):
         self.data = data
         self.wav_dir = Path(wav_dir)
         self.lab_dir = Path(lab_dir)
-        
+
         self.audio_config = audio_config
         self.hop_length = audio_config.hop_length
         self.sample_rate = audio_config.sample_rate
@@ -26,7 +26,7 @@ class TextAudioDataset(torch.utils.data.Dataset):
         self.spec_tfm = SpectrogramTransform(**audio_config)
 
     def preprocess(self, bname):
-        with open(self.lab_dir / f'{bname}.lab', 'r') as f:
+        with open(self.lab_dir / f"{bname}.lab", "r") as f:
             fullcontext = f.readlines()
         s, e, _ = fullcontext[0].split()
         s, e = int(s), int(e)
@@ -34,7 +34,7 @@ class TextAudioDataset(torch.utils.data.Dataset):
         s, e, _ = fullcontext[-1].split()
         s, e = int(s), int(e)
         wav_e = int(s * 1e-7 * self.sample_rate)
-        wav, _ = torchaudio.load(self.wav_dir / f'{bname}.wav')
+        wav, _ = torchaudio.load(self.wav_dir / f"{bname}.wav")
         wav = wav[:, wav_s:wav_e]
         spec = self.spec_tfm.to_spec(wav).squeeze(0)
         return wav, spec
@@ -43,28 +43,17 @@ class TextAudioDataset(torch.utils.data.Dataset):
         bname, label = self.data[idx]
 
         phonemes = torch.LongTensor(text_to_sequence(label.split()))
-        phonemes = phonemes[1:-1]
 
         wav, spec = self.preprocess(bname)
 
-        return (
-            bname,
-            phonemes,
-            wav,
-            spec
-        )
+        return (bname, phonemes, wav, spec)
 
     def __len__(self):
         return len(self.data)
 
 
 def collate_fn(batch):
-    (
-        bnames,
-        phonemes,
-        wavs,
-        specs
-    ) = tuple(zip(*batch))
+    (bnames, phonemes, wavs, specs) = tuple(zip(*batch))
 
     B = len(bnames)
     x_lengths = [len(x) for x in phonemes]
